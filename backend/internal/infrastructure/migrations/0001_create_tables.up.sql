@@ -2,18 +2,20 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- Для функции gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS CITEXT;    -- Для использования CITEXT (нечувствительный к регистру тип данных)
 
+
 -- Таблица пользователей
 CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    role VARCHAR(10) NOT NULL DEFAULT 'client' CHECK (role IN ('client', 'master', 'admin')),
-    name VARCHAR(100) NOT NULL,
+    role VARCHAR(10)  DEFAULT 'client' CHECK (role IN ('client', 'master', 'admin')),
+    name VARCHAR(100) ,
     email CITEXT UNIQUE,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    telegram_id INT UNIQUE,
-    password VARCHAR(250) NOT NULL CHECK (octet_length(password) > 0),
+    phone VARCHAR(20) UNIQUE ,
+    telegram_id BIGINT UNIQUE, -- Исправлено
+    password VARCHAR(250) ,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     login_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Таблица услуг
 CREATE TABLE services (
@@ -90,3 +92,5 @@ CREATE TABLE audit_logs (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX idx_users_telegram_id ON users (telegram_id);

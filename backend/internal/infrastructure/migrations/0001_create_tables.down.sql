@@ -11,3 +11,4 @@ DROP TABLE IF EXISTS users CASCADE;
 -- Удаляем расширения (если больше не нужны)
 DROP EXTENSION IF EXISTS CITEXT;
 DROP EXTENSION IF EXISTS pgcrypto;
+DROP INDEX IF EXISTS idx_users_telegram_id;
