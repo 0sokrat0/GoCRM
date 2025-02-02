@@ -13,7 +13,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Настройка CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Добавьте URL вашего фронтенда
+		AllowAllOrigins:  true, // Разрешает все источники (ТОЛЬКО ДЛЯ DEV!)
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
 		AllowCredentials: true,
@@ -29,12 +29,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	api := r.Group("/api/v1")
 	{
 		// User endpoints
-		api.POST("/users", s.userHandler.CreateUserHandler)
-		api.GET("/users/:id", s.userHandler.GetUserHandler)
-		api.PUT("/users/:id", s.userHandler.UpdateUserHandler)
-		api.DELETE("/users/:id", s.userHandler.DeleteUserHandler)
-		api.GET("/users/telegram/:tgID", s.userHandler.GetUserByTelegramIDHandler) // Новый эндпоинт
-		api.POST("/users/telegram", s.userHandler.CreateOrUpdateUserHandler)
+		api.POST("/auth/telegram", s.userHandler.TelegramAuthHandler)
+
+		// User endpoints
+		api.GET("/users/telegram/:tgID", s.userHandler.GetUserByTelegramIDHandler)
+		api.GET("/users/:id", s.userHandler.GetUserByIDHandler)
 
 		// Booking endpoints
 		api.POST("/booking", s.bookingHandler.CreateBookingHandler)

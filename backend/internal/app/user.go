@@ -15,103 +15,56 @@ type UserService struct {
 }
 
 func NewUserService(r repository.UserRepository) *UserService {
-	return &UserService{
-		userRepo: r,
-	}
+	return &UserService{userRepo: r}
 }
 
-func (us *UserService) CreateUser(u *entity.User) error {
-
-	if u == nil {
-		return errors.New("user cannot be nil")
-	}
-
-	if u.Role == "" {
-		u.Role = "client"
-	}
-
-	if u.Name == "" {
-		return errors.New("user name is required")
-	}
-	if u.Email == "" {
-		return errors.New("user email is required")
-	}
-
-	err := us.userRepo.Create(context.Background(), u)
-	if err != nil {
-		return err
-	}
-	return nil
-
-}
-
-func (us *UserService) GetUser(id uuid.UUID) (*entity.User, error) {
-	u, err := us.userRepo.GetByID(context.Background(), id)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if u == nil {
-		return nil, errors.New("user not found")
-	}
-	return u, nil
-}
-
-func (us *UserService) UpdateUser(u *entity.User) (*entity.User, error) {
-	if u == nil {
-		return nil, errors.New("user cannot be nil")
-	}
-
-	updatedUser, err := us.userRepo.Update(context.Background(), u)
-	if err != nil {
-		return nil, err
-	}
-	return updatedUser, nil
-}
-
-func (us *UserService) DeleteUser(u *entity.User) error {
-	if u == nil {
-		return errors.New("user cannot be nil")
-	}
-	err := us.userRepo.Delete(context.Background(), u)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (us *UserService) GetByTelegramID(tgID int64) (*entity.User, error) {
-	user, err := us.userRepo.GetByTelegramID(context.Background(), tgID)
-	if err != nil {
-		return nil, err
-	}
-
-	if user == nil {
-		return nil, errors.New("user not found")
-	}
-	return user, nil
-}
-
-func (us *UserService) CreateOrUpdateUser(u *entity.User) error {
-	existingUser, err := us.userRepo.GetByTelegramID(context.Background(), u.TelegramID)
+func (us *UserService) GetOrCreateTelegramUser(
+	ctx context.Context,
+	tgID int64,
+	username string,
+	firstName string,
+	lastName string,
+	languageCode string,
+	phone string,
+) (*entity.User, error) {
+	existingUser, err := us.userRepo.GetByTelegramID(ctx, tgID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+
+	if existingUser != nil {
+		existingUser.UpdateFromTelegram(username, firstName, lastName, languageCode, phone)
+		_, err = us.userRepo.Update(ctx, existingUser)
+		return existingUser, err
+	}
+
+	newUser, err := entity.NewTelegramUser(tgID, username, firstName, lastName, languageCode, phone)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := us.userRepo.Create(ctx, newUser); err != nil {
+		return nil, err
+	}
+
+	return newUser, nil
+}
+
+func (us *UserService) GetUserByTelegramID(ctx context.Context, tgID int64) (*entity.User, error) {
+	return us.userRepo.GetByTelegramID(ctx, tgID)
+}
+
+func (us *UserService) UpdateUserSession(ctx context.Context, tgID int64, sessionHash string) error {
+	user, err := us.userRepo.GetByTelegramID(ctx, tgID)
+	if err != nil {
 		return err
 	}
 
-	if u.Role == "" {
-		u.Role = "client"
-	}
-
-	if existingUser == nil {
-		// Создаем нового пользователя
-		return us.userRepo.Create(context.Background(), u)
-	}
-
-	// Обновляем существующего пользователя
-	existingUser.Name = u.Name
-	existingUser.Email = u.Email
-	existingUser.Phone = u.Phone
-	_, err = us.userRepo.Update(context.Background(), existingUser)
+	user.SetSessionHash(sessionHash)
+	_, err = us.userRepo.Update(ctx, user)
 	return err
+}
+
+func (us *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	return us.userRepo.GetByID(ctx, id)
 }

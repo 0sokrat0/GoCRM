@@ -3,11 +3,13 @@ package server
 import (
 	bot_handlers "GoCRM/internal/app/telegram/bot_handlers"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	_ "github.com/joho/godotenv/autoload"
 
@@ -64,6 +66,15 @@ func NewServer() *http.Server {
 	if err != nil {
 		port = 8080
 	}
+
+	mode := os.Getenv("GIN_MODE")
+	log.Println("Current GIN_MODE:", mode) // Проверяем, что загружается
+
+	if mode == "" {
+		mode = "debug" // Значение по умолчанию, если переменная не установлена
+	}
+
+	gin.SetMode(mode)
 
 	s := &Server{
 		port: port,

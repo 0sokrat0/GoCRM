@@ -9,9 +9,11 @@ build:
 	
 	@go build -o main cmd/api/main.go
 
-# Run the application
+
 run:
-	@go run cmd/api/main.go &
+	@echo "Running application in debug mode..."
+	@GIN_MODE=debug go run cmd/api/main.go
+
 # Create DB container
 docker-run:
 	@if docker compose up --build 2>/dev/null; then \

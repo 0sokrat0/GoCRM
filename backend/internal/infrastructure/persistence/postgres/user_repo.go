@@ -1,8 +1,11 @@
+// repository/postgres/user_repo.go
 package postgres
 
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 
 	"GoCRM/internal/domain/entity"
 	"GoCRM/internal/domain/repository"
@@ -20,71 +23,129 @@ func NewPGUserRepo(db *sql.DB) repository.UserRepository {
 
 func (r *PGUserRepo) Create(ctx context.Context, u *entity.User) error {
 	query := `
-		INSERT INTO users (user_id, name, email, role, phone, telegram_id, password, created_at, login_date)
-		VALUES ($1, $2, $3, COALESCE(NULLIF($4, ''), 'client'), $5, $6, $7, $8, $9)
+		INSERT INTO users (
+			id, role, telegram_id, username, 
+			first_name, last_name, lang_code, 
+			phone, session_hash, created_at, login_date
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 
-	if u.ID == uuid.Nil {
-		u.ID = uuid.New()
-	}
-
 	_, err := r.db.ExecContext(ctx, query,
-		u.ID, u.Name, u.Email, u.Role, u.Phone, u.TelegramID, u.Password, u.CreatedAt, u.LoginDate,
+		u.ID,
+		u.Role,
+		u.TelegramID,
+		u.Username,
+		u.FirstName,
+		u.LastName,
+		u.LanguageCode,
+		u.Phone,
+		u.SessionHash,
+		u.CreatedAt,
+		u.LoginDate,
 	)
 	return err
 }
 
-func (r *PGUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
-	query := `
-		SELECT user_id, name, email, role, phone, telegram_id, password, created_at, login_date
-		FROM users
-		WHERE user_id = $1
-	`
-	var u entity.User
-	if err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&u.ID, &u.Name, &u.Email, &u.Role, &u.Phone, &u.TelegramID, &u.Password, &u.CreatedAt, &u.LoginDate,
-	); err != nil {
-		return nil, err
-	}
-	return &u, nil
-}
-
 func (r *PGUserRepo) Update(ctx context.Context, u *entity.User) (*entity.User, error) {
 	query := `
-		UPDATE users
-		SET name = $2, email = $3, phone = $4, telegram_id = $5, role = $6, password = $7, login_date = $8
-		WHERE user_id = $1
-		RETURNING user_id, name, email, phone, telegram_id, role, password, created_at, login_date
+		UPDATE users SET
+			username = $2,
+			first_name = $3,
+			last_name = $4,
+			lang_code = $5,
+			phone = $6,
+			session_hash = $7,
+			login_date = $8
+		WHERE id = $1
+		RETURNING *
 	`
-	var updated entity.User
-	if err := r.db.QueryRowContext(ctx, query,
-		u.ID, u.Name, u.Email, u.Phone, u.TelegramID, u.Role, u.Password, u.LoginDate,
-	).Scan(&updated.ID, &updated.Name, &updated.Email, &updated.Phone, &updated.TelegramID, &updated.Role, &updated.Password, &updated.CreatedAt, &updated.LoginDate); err != nil {
-		return nil, err
+
+	updated := &entity.User{}
+	err := r.db.QueryRowContext(ctx, query,
+		u.ID,
+		u.Username,
+		u.FirstName,
+		u.LastName,
+		u.LanguageCode,
+		u.Phone,
+		u.SessionHash,
+		u.LoginDate,
+	).Scan(
+		&updated.ID,
+		&updated.Role,
+		&updated.TelegramID,
+		&updated.Username,
+		&updated.FirstName,
+		&updated.LastName,
+		&updated.LanguageCode,
+		&updated.Phone,
+		&updated.SessionHash,
+		&updated.CreatedAt,
+		&updated.LoginDate,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("error updating user: %w", err)
 	}
-	return &updated, nil
+
+	return updated, nil
 }
 
-func (r *PGUserRepo) Delete(ctx context.Context, u *entity.User) error {
+func (r *PGUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	query := `
-		DELETE FROM users
-		WHERE user_id = $1
+		SELECT * FROM users 
+		WHERE id = $1
 	`
-	_, err := r.db.ExecContext(ctx, query, u.ID)
-	return err
+
+	u := &entity.User{}
+	err := r.db.QueryRowContext(ctx, query, id).Scan(
+		&u.ID,
+		&u.Role,
+		&u.TelegramID,
+		&u.Username,
+		&u.FirstName,
+		&u.LastName,
+		&u.LanguageCode,
+		&u.Phone,
+		&u.SessionHash,
+		&u.CreatedAt,
+		&u.LoginDate,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("error getting user by ID: %w", err)
+	}
+
+	return u, nil
 }
 
 func (r *PGUserRepo) GetByTelegramID(ctx context.Context, tgID int64) (*entity.User, error) {
 	query := `
-        SELECT user_id, name, email, role, phone, telegram_id, password, created_at, login_date
-        FROM users
-        WHERE telegram_id = $1
-    `
-	var u entity.User
-	if err := r.db.QueryRowContext(ctx, query, tgID).Scan(
-		&u.ID, &u.Name, &u.Email, &u.Role, &u.Phone, &u.TelegramID, &u.Password, &u.CreatedAt, &u.LoginDate,
-	); err != nil {
-		return nil, err
+		SELECT * FROM users 
+		WHERE telegram_id = $1
+	`
+
+	u := &entity.User{}
+	err := r.db.QueryRowContext(ctx, query, tgID).Scan(
+		&u.ID,
+		&u.Role,
+		&u.TelegramID,
+		&u.Username,
+		&u.FirstName,
+		&u.LastName,
+		&u.LanguageCode,
+		&u.Phone,
+		&u.SessionHash,
+		&u.CreatedAt,
+		&u.LoginDate,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error getting user by Telegram ID: %w", err)
 	}
-	return &u, nil
+
+	return u, nil
 }

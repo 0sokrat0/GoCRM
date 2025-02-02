@@ -3,7 +3,6 @@ package bot_handlers
 
 import (
 	"GoCRM/internal/app"
-	"GoCRM/internal/domain/entity"
 
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -34,28 +33,28 @@ func (h *BotHandler) HandleWebhookUpdate(c *gin.Context) {
 		return
 	}
 
-	if update.Message != nil {
-		switch update.Message.Text {
-		case "/start":
-			h.handleStartCommand(update.Message)
-			// Добавьте другие команды
-		}
-	}
+	// if update.Message != nil {
+	// 	switch update.Message.Text {
+	// 	case "/start":
+	// 		h.handleStartCommand(update.Message)
+	// 		// Добавьте другие команды
+	// 	}
+	// }
 
 	c.JSON(200, gin.H{"status": "ok"})
 }
 
-func (h *BotHandler) handleStartCommand(msg *tgbotapi.Message) {
-	user := &entity.User{
-		TelegramID: msg.From.ID,
-	}
+// func (h *BotHandler) handleStartCommand(msg *tgbotapi.Message) {
+// 	user := &entity.User{
+// 		TelegramID: msg.From.ID,
+// 	}
 
-	if err := h.userService.CreateOrUpdateUser(user); err != nil {
-		// Обработка ошибки
-		h.bot.Send(tgbotapi.NewMessage(msg.Chat.ID, "Произошла ошибка"))
-		return
-	}
+// 	if err := h.userService.CreateOrUpdateUser(user); err != nil {
+// 		// Обработка ошибки
+// 		h.bot.Send(tgbotapi.NewMessage(msg.Chat.ID, "Произошла ошибка"))
+// 		return
+// 	}
 
-	response := "Добро пожаловать! Используйте:\n/mybookings - ваши записи"
-	h.bot.Send(tgbotapi.NewMessage(msg.Chat.ID, response))
-}
+// 	response := "Добро пожаловать! Используйте:\n/mybookings - ваши записи"
+// 	h.bot.Send(tgbotapi.NewMessage(msg.Chat.ID, response))
+// }

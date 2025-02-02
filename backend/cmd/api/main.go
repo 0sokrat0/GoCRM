@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,10 +11,6 @@ import (
 
 	"GoCRM/internal/server"
 )
-
-const migrationsDir = "migrations"
-
-var MigrationsFS embed.FS
 
 func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.

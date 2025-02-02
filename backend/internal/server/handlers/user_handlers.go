@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"GoCRM/internal/app"
-	"GoCRM/internal/domain/entity"
+	"GoCRM/internal/app/telegram"
 	"GoCRM/pkg/response"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -19,80 +20,55 @@ func NewUserHandler(s *app.UserService) *UserHandler {
 	return &UserHandler{service: s}
 }
 
-func (h *UserHandler) CreateUserHandler(c *gin.Context) {
-	var user entity.User
+func (h *UserHandler) TelegramAuthHandler(c *gin.Context) {
+	type TelegramAuthRequest struct {
+		InitData string `json:"init_data"`
+	}
 
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid request payload", http.StatusBadRequest, err.Error()))
+	var req TelegramAuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Println("Invalid request body:", err)
+		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid request", http.StatusBadRequest, err.Error()))
 		return
 	}
 
-	if err := h.service.CreateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse("Failed to create user", http.StatusInternalServerError, err.Error()))
-		return
-	}
-	c.JSON(http.StatusCreated, response.SuccessResponse(user))
+	log.Println("Received init_data:", req.InitData)
 
-}
-
-func (h *UserHandler) GetUserHandler(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	// Используем стороннюю валидацию через init-data-golang.
+	userData, err := telegram.ValidateTelegramInitDataWithThirdParty(req.InitData)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid user ID", http.StatusBadRequest, err.Error()))
+		log.Println("Validation failed:", err)
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse("Invalid Telegram data", http.StatusUnauthorized, err.Error()))
 		return
 	}
 
-	user, err := h.service.GetUser(id)
+	log.Println("User validated:", userData.ID, userData.Username)
+
+	// Создаем или получаем пользователя.
+	user, err := h.service.GetOrCreateTelegramUser(
+		c.Request.Context(),
+		userData.ID,
+		userData.Username,
+		userData.FirstName,
+		userData.LastName,
+		userData.LanguageCode,
+		userData.Phone,
+	)
 	if err != nil {
-		c.JSON(http.StatusNotFound, response.ErrorResponse("User not found", http.StatusNotFound, err.Error()))
+		log.Println("Error creating/getting user:", err)
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse("Failed to process user", http.StatusInternalServerError, err.Error()))
 		return
 	}
 
+	// Обновляем сессию пользователя.
+	if err := h.service.UpdateUserSession(c.Request.Context(), user.TelegramID, userData.Hash); err != nil {
+		log.Println("Error updating session:", err)
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse("Failed to update session", http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	log.Println("User authenticated:", user.TelegramID)
 	c.JSON(http.StatusOK, response.SuccessResponse(user))
-}
-
-func (h *UserHandler) UpdateUserHandler(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid user ID", http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	var user entity.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid request payload", http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	user.ID = id
-
-	updatedUser, err := h.service.UpdateUser(&user)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse("Failed to update user", http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, response.SuccessResponse(updatedUser))
-}
-
-func (h *UserHandler) DeleteUserHandler(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid user ID", http.StatusBadRequest, err.Error()))
-		return
-	}
-
-	user := &entity.User{ID: id}
-
-	if err := h.service.DeleteUser(user); err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse("Failed to delete user", http.StatusInternalServerError, err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, response.SuccessResponse(map[string]string{"message": "User deleted successfully"}))
 }
 
 func (h *UserHandler) GetUserByTelegramIDHandler(c *gin.Context) {
@@ -103,7 +79,7 @@ func (h *UserHandler) GetUserByTelegramIDHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.GetByTelegramID(tgID)
+	user, err := h.service.GetUserByTelegramID(c.Request.Context(), tgID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse("User not found", http.StatusNotFound, err.Error()))
 		return
@@ -112,15 +88,17 @@ func (h *UserHandler) GetUserByTelegramIDHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response.SuccessResponse(user))
 }
 
-func (h *UserHandler) CreateOrUpdateUserHandler(c *gin.Context) {
-	var user entity.User
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid request payload", http.StatusBadRequest, err.Error()))
+func (h *UserHandler) GetUserByIDHandler(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse("Invalid user ID", http.StatusBadRequest, err.Error()))
 		return
 	}
 
-	if err := h.service.CreateOrUpdateUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse("Failed to create/update user", http.StatusInternalServerError, err.Error()))
+	user, err := h.service.GetUserByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, response.ErrorResponse("User not found", http.StatusNotFound, err.Error()))
 		return
 	}
 

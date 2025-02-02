@@ -2,20 +2,20 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;  -- Для функции gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS CITEXT;    -- Для использования CITEXT (нечувствительный к регистру тип данных)
 
-
 -- Таблица пользователей
 CREATE TABLE users (
-    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    role VARCHAR(10)  DEFAULT 'client' CHECK (role IN ('client', 'master', 'admin')),
-    name VARCHAR(100) ,
-    email CITEXT UNIQUE,
-    phone VARCHAR(20) UNIQUE ,
-    telegram_id BIGINT UNIQUE, -- Исправлено
-    password VARCHAR(250) ,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),  -- Первичный ключ, соответствует entity.ID
+    role VARCHAR(10) DEFAULT 'client' CHECK (role IN ('client', 'master', 'admin')),
+    telegram_id BIGINT UNIQUE NOT NULL,              -- Поле TelegramID
+    username VARCHAR(50) NOT NULL,                    -- Username
+    first_name VARCHAR(50) NOT NULL,                  -- FirstName
+    last_name VARCHAR(50),                            -- LastName (может быть NULL)
+    lang_code VARCHAR(10),                            -- LanguageCode (назван как lang_code в JSON)
+    phone VARCHAR(20),                                -- Phone
+    session_hash VARCHAR(250),                        -- SessionHash
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    login_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    login_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-
 
 -- Таблица услуг
 CREATE TABLE services (
@@ -32,7 +32,7 @@ CREATE TABLE masters_services (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     master_id UUID NOT NULL,
     service_id UUID NOT NULL,
-    FOREIGN KEY (master_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (master_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES services(service_id) ON DELETE CASCADE
 );
 
@@ -44,7 +44,7 @@ CREATE TABLE schedule (
     start_time TIME NOT NULL,
     end_time TIME NOT NULL CHECK (end_time > start_time),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (master_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (master_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Таблица бронирований
@@ -56,8 +56,8 @@ CREATE TABLE bookings (
     booking_time TIMESTAMP WITH TIME ZONE NOT NULL,
     status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'confirmed', 'canceled')),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (master_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (master_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES services(service_id) ON DELETE CASCADE
 );
 
@@ -80,7 +80,7 @@ CREATE TABLE notifications (
     message TEXT NOT NULL,
     status VARCHAR(20) NOT NULL CHECK (status IN ('sent', 'failed')),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Таблица аудиторских логов
@@ -90,7 +90,8 @@ CREATE TABLE audit_logs (
     action VARCHAR(255) NOT NULL,
     details TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Дополнительно можно создать уникальный индекс по telegram_id (хотя в определении уже стоит UNIQUE).
 CREATE UNIQUE INDEX idx_users_telegram_id ON users (telegram_id);
