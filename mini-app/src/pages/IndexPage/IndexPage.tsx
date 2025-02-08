@@ -24,7 +24,7 @@ export const IndexPage: FC = () => {
           {/* Список действий */}
           <List className={`${styles.actionsList} ${styles.glowEffect} fadeIn`}>
             <Section header="Действия">
-              <Link to="/booking" className={styles.link}>
+              <Link to="/servicePage" className={styles.link}>
                 <Cell
                   before={<span className={styles.icon}>✂️</span>}
                   subtitle="Выберите время и мастера"
@@ -68,7 +68,7 @@ export const IndexPage: FC = () => {
         {/* Кнопка "Написать в Telegram" */}
         <div className={`${styles.hoursCard} ${styles.glowEffect}`}>
           <Link
-            to="https://t.me/YourTelegramUsername"  // замените на ваш никнейм
+            to="https://t.me/SOKRAT_00" // замените на ваш никнейм
             target="_blank"
             rel="noopener noreferrer"
             className={styles.link}

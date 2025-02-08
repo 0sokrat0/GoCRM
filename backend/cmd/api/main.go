@@ -1,15 +1,15 @@
 package main
 
 import (
+	httpserver "GoCRM/internal/delivery/http_server"
 	"context"
 	"fmt"
 	"log"
 	"net/http"
+
 	"os/signal"
 	"syscall"
 	"time"
-
-	"GoCRM/internal/server"
 )
 
 func gracefulShutdown(apiServer *http.Server, done chan bool) {
@@ -38,7 +38,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 
 func main() {
 
-	server := server.NewServer()
+	server := httpserver.NewServer()
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
