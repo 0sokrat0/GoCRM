@@ -43,7 +43,6 @@ func NewBooking(userID, masterID, serviceID uuid.UUID, bookingTime time.Time) (*
 	}, nil
 }
 
-// ✅ Метод подтверждения записи
 func (b *Booking) Confirm() error {
 	if b.Status == StatusCanceled {
 		return errors.New("booking is already canceled")
@@ -53,7 +52,6 @@ func (b *Booking) Confirm() error {
 	return nil
 }
 
-// ✅ Метод отмены записи
 func (b *Booking) Cancel() error {
 	if b.Status == StatusConfirmed {
 		return errors.New("cannot cancel confirmed booking")
@@ -63,7 +61,6 @@ func (b *Booking) Cancel() error {
 	return nil
 }
 
-// ✅ Метод переноса записи
 func (b *Booking) Reschedule(newTime time.Time) error {
 	if newTime.Before(time.Now()) {
 		return errors.New("new booking time cannot be in the past")

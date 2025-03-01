@@ -12,6 +12,7 @@ type Config struct {
 	App      AppConfig      `yaml:"app"`
 	Database DatabaseConfig `yaml:"database"`
 	Telegram TelegramConfig `yaml:"telegram"`
+	Logger   LoggerConfig   `yaml:"logger"`
 }
 
 type AppConfig struct {
@@ -32,6 +33,10 @@ type DatabaseConfig struct {
 	SSLMode  string `yaml:"sslmode" env:"POSTGRES_SSLMODE" env-default:"disable"`
 }
 
+type LoggerConfig struct {
+	Level string `yaml:"level" env:"LOGGER_LEVEL" env-default:"info"`
+}
+
 type TelegramConfig struct {
 	BotToken string `yaml:"bot_token" env:"TELEGRAM_BOT_TOKEN"`
 }
@@ -47,12 +52,10 @@ func GetConfig() *Config {
 			log.Println("⚠️ Не удалось загрузить .env, продолжаем...")
 		}
 
-		// Загружаем переменные в структуру конфигурации
 		if err := cleanenv.ReadEnv(cfg); err != nil {
 			log.Fatalf("❌ Ошибка загрузки конфигурации: %v", err)
 		}
 
-		log.Printf("✅ TELEGRAM_BOT_TOKEN загружен: %s", cfg.Telegram.BotToken)
 	})
 	return cfg
 }

@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"GoCRM/internal/delivery/http_server/middleware"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
@@ -12,8 +13,9 @@ type Response struct {
 }
 
 func (s *Server) RegisterRoutes() *gin.Engine {
-	r := gin.Default()
-	r.Use(gin.Logger()) // ✅ Логируем все запросы
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middleware.LoggerMiddleware())
 
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins:  true,

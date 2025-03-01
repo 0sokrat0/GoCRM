@@ -2,8 +2,6 @@ import { classNames, openLink } from '@telegram-apps/sdk-react';
 import { type FC, type MouseEventHandler, useCallback } from 'react';
 import { Link as RouterLink, type LinkProps } from 'react-router-dom';
 
-import './Link.css';
-
 export const Link: FC<LinkProps> = ({
   className,
   onClick: propsOnClick,
@@ -13,8 +11,7 @@ export const Link: FC<LinkProps> = ({
   const onClick = useCallback<MouseEventHandler<HTMLAnchorElement>>((e) => {
     propsOnClick?.(e);
 
-    // Compute if target path is external. In this case we would like to open
-    // link using TMA method.
+    // Compute if target path is external.
     let path: string;
     if (typeof to === 'string') {
       path = to;
@@ -34,12 +31,19 @@ export const Link: FC<LinkProps> = ({
     }
   }, [to, propsOnClick]);
 
+  // Здесь можно добавить нужные классы для прозрачности и других эффектов.
+  // Например, text-white с уменьшенной непрозрачностью:
+  const linkClasses = classNames(
+    className,
+    'text-white text-opacity-75 hover:text-opacity-100 transition-colors duration-200'
+  );
+
   return (
     <RouterLink
       {...rest}
       to={to}
       onClick={onClick}
-      className={classNames(className, 'link')}
+      className={linkClasses}
     />
   );
 };

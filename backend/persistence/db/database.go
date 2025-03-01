@@ -8,14 +8,16 @@ import (
 	"GoCRM/internal/config"
 	"GoCRM/persistence/models"
 
+	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	zlogger "GoCRM/pkg/logger"
 )
 
-// Database представляет интерфейс работы с БД.
 type Database interface {
-	Health() map[string]string // ✅ Добавляем метод Health()
+	Health() map[string]string
 	Close() error
 	DB() *gorm.DB
 }
@@ -24,7 +26,6 @@ type database struct {
 	db *gorm.DB
 }
 
-// NewDatabase создает подключение к БД
 func NewDatabase(cfg *config.DatabaseConfig) (Database, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s search_path=%s",
@@ -46,24 +47,23 @@ func NewDatabase(cfg *config.DatabaseConfig) (Database, error) {
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetConnMaxLifetime(5 * time.Minute)
 
-	if config.GetConfig().App.Env != "production" { // Только в dev-режиме
-		log.Println("⚠️  Запускаем AutoMigrate (dev mode)...")
+	if config.GetConfig().App.Env != "production" {
+		zlogger.Warn("⚠️  Запускаем AutoMigrate (dev mode)...")
 		if err := db.AutoMigrate(
 			&models.User{},
 			&models.Service{},
 		); err != nil {
-			log.Fatalf("❌ Ошибка миграции: %v", err)
+			zlogger.Fatal("❌ Ошибка миграции: %v", zap.Error(err))
 		}
-		log.Println("✅ AutoMigrate успешно завершён")
+		zlogger.Info("✅ AutoMigrate успешно завершён")
 	} else {
-		log.Println("🚀 Продакшен-режим: AutoMigrate отключён")
+		zlogger.Warn("🚀 Продакшен-режим: AutoMigrate отключён")
 	}
 
-	log.Println("✅ Подключение к базе данных установлено")
+	zlogger.Info("✅ Подключение к базе данных установлено")
 	return &database{db: db}, nil
 }
 
-// ✅ Реализация метода Health()
 func (d *database) Health() map[string]string {
 	stats := make(map[string]string)
 	sqlDB, err := d.db.DB()
@@ -87,18 +87,16 @@ func (d *database) Health() map[string]string {
 	return stats
 }
 
-// Close закрывает соединение с БД
 func (d *database) Close() error {
 	sqlDB, err := d.db.DB()
 	if err != nil {
-		log.Println("❌ Ошибка при получении SQL DB:", err)
+		zlogger.Warn("❌ Ошибка при получении SQL DB:", zap.Error(err))
 		return err
 	}
-	log.Println("⛔ Закрытие соединения с БД")
+	zlogger.Warn("⛔ Закрытие соединения с БД")
 	return sqlDB.Close()
 }
 
-// DB возвращает GORM-подключение
 func (d *database) DB() *gorm.DB {
 	return d.db
 }

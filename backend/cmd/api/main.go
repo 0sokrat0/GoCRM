@@ -1,7 +1,9 @@
 package main
 
 import (
+	"GoCRM/internal/config"
 	httpserver "GoCRM/internal/delivery/http_server"
+	"GoCRM/pkg/logger"
 	"context"
 	"fmt"
 	"log"
@@ -13,6 +15,9 @@ import (
 )
 
 func gracefulShutdown(apiServer *http.Server, done chan bool) {
+
+	logger.Shutdown()
+
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -38,7 +43,16 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 
 func main() {
 
-	server := httpserver.NewServer()
+	cfg := config.GetConfig()
+
+	logger.Init(logger.Config{
+		Environment: cfg.Logger.Level,
+		Color:       true,
+		AddCaller:   true,
+		CallerSkip:  5,
+	})
+
+	server := httpserver.NewServer(cfg)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)

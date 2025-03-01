@@ -17,7 +17,6 @@ import (
 
 var testDB Database // ✅ Было `Service`, теперь `Database`
 
-// mustStartPostgresContainer запускает контейнер с PostgreSQL и возвращает его терминатор и DSN.
 func mustStartPostgresContainer() (func(), string, error) {
 	dbName := "testdb"
 	dbUser := "testuser"
@@ -33,7 +32,7 @@ func mustStartPostgresContainer() (func(), string, error) {
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
-				WithStartupTimeout(10*time.Second)), // ✅ Достаточный таймаут
+				WithStartupTimeout(10*time.Second)),
 	)
 	if err != nil {
 		return nil, "", err
@@ -66,20 +65,16 @@ func TestMain(m *testing.M) {
 		log.Fatalf("❌ Ошибка запуска контейнера с Postgres: %v", err)
 	}
 
-	// Подключаем GORM к тестовой БД
 	testDB = newTestDatabase(dsn)
 
-	// Запускаем тесты
 	code := m.Run()
 
-	// Закрываем БД и останавливаем контейнер
 	testDB.Close()
 	teardown()
 
-	os.Exit(code) // Корректное завершение
+	os.Exit(code)
 }
 
-// newTestDatabase создает соединение с GORM для тестов.
 func newTestDatabase(dsn string) Database { // ✅ Было `Service`, теперь `Database`
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -89,14 +84,12 @@ func newTestDatabase(dsn string) Database { // ✅ Было `Service`, тепе�
 	return &database{db: db} // ✅ Было `&service{db: db}`
 }
 
-// 🔍 **Тест на инициализацию подключения**
 func TestNew(t *testing.T) {
 	if testDB == nil {
 		t.Fatal("❌ New() вернул nil")
 	}
 }
 
-// 🔍 **Тест на здоровье БД**
 func TestHealth(t *testing.T) {
 	stats := testDB.Health()
 
@@ -113,7 +106,6 @@ func TestHealth(t *testing.T) {
 	}
 }
 
-// 🔍 **Тест закрытия соединения**
 func TestClose(t *testing.T) {
 	err := testDB.Close()
 	if err != nil {

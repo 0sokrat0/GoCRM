@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// 📌 Чистая схема таблицы services для БД
 type Service struct {
 	ServiceID   uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name        string    `gorm:"type:varchar(20);not null;uniqueIndex"`

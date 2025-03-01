@@ -5,14 +5,15 @@ import (
 	"GoCRM/internal/delivery/http_server/handlers"
 	"GoCRM/persistence/db"
 	"GoCRM/persistence/repositories"
+	"GoCRM/pkg/logger"
 
 	"GoCRM/internal/usecase"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type Server struct {
@@ -22,23 +23,21 @@ type Server struct {
 	serviceHandler *handlers.ServiceHandler
 }
 
-func NewServer() *http.Server {
+func NewServer(cfg *config.Config) *http.Server {
 
-	cfg := config.GetConfig()
+	logger.Info("🔹 Приложение:", zap.String("name", cfg.App.Name))
+	logger.Info("| Среда:", zap.String("env", cfg.App.Env))
+	logger.Info("| Порт:", zap.Int("port", cfg.App.Port))
 
-	fmt.Println("🔹 Приложение:", cfg.App.Name, "| Среда:", cfg.App.Env, "| Порт:", cfg.App.Port)
-	fmt.Println("🔹 База данных:", cfg.Database.User, "@", cfg.Database.Host)
-
-	log.Println("Current GIN_MODE:", cfg.App.GinMode)
-	gin.SetMode(cfg.App.GinMode)
+	gin.SetMode(gin.ReleaseMode)
 
 	dbService, err := db.NewDatabase(&cfg.Database)
 	if err != nil {
-		log.Fatalf("❌ Ошибка подключения к БД: %v", err)
+		logger.Fatal("❌ Ошибка подключения к БД: %v", zap.Error(err))
 	}
 	gormDB := dbService.DB()
 
-	userRepo := repositories.NewPGUserRepo(gormDB)
+	userRepo := repositories.NewDBUserRepo(gormDB)
 	userService := usecase.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
