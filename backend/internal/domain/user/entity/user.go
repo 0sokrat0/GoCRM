@@ -26,23 +26,24 @@ const (
 )
 
 type User struct {
-	ID           uuid.UUID  // Уникальный идентификатор
-	Role         Role       // Роль пользователя (client, master, admin)
-	Level        UserLevel  // Уровень лояльности клиента
-	TelegramID   int64      // ID в Telegram
-	Username     string     // Telegram username
-	ClientName   string     // Имя клиента реальное (не тг username)
-	FirstName    string     // Имя
-	LastName     string     // Фамилия
-	LanguageCode string     // Язык
-	Phone        string     // Номер телефона
-	IsVerified   bool       // Подтверждённый пользователь
-	IsBot        bool       // Является ли ботом
-	SessionHash  string     // Хеш сессии для авторизации
-	ReferrerID   *uuid.UUID // ID пригласившего пользователя
-	CreatedAt    time.Time  // Дата регистрации
-	UpdatedAt    time.Time  // Последнее обновление профиля
-	LoginDate    time.Time  // Дата последнего входа
+	ID           uuid.UUID // Уникальный идентификатор
+	Role         Role      // Роль пользователя (client, master, admin)
+	Level        UserLevel // Уровень лояльности клиента
+	TelegramID   int64     // ID в Telegram
+	Username     string    // Telegram username
+	ClientName   string    // Имя клиента реальное (не тг username)
+	FirstName    string    // Имя
+	LastName     string    // Фамилия
+	LanguageCode string    // Язык
+	Phone        string    // Номер телефона
+	// DateOfBirth  time.Time  // Дата рождения
+	IsVerified  bool       // Подтверждённый пользователь
+	IsBot       bool       // Является ли ботом
+	SessionHash string     // Хеш сессии для авторизации
+	ReferrerID  *uuid.UUID // ID пригласившего пользователя
+	CreatedAt   time.Time  // Дата регистрации
+	UpdatedAt   time.Time  // Последнее обновление профиля
+	LoginDate   time.Time  // Дата последнего входа
 }
 
 func NewTelegramUser(

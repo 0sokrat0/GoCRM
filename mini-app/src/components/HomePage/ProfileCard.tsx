@@ -34,7 +34,7 @@ export const ProfileCard: FC<ProfileCardProps> = ({ avatarSrc, title }) => {
           {[
             { to: "/servicePage", icon: "/images/calendar_24.svg", text: "Записаться", subtitle: "Выберите время и мастера" },
             { to: "/service", icon: "/images/actions_24.svg", text: "Услуги", subtitle: "Список услуг" },
-            { to: "/history", icon: "/images/person_24.svg", text: "Профиль", subtitle: "История записей" },
+            { to: "/profile", icon: "/images/person_24.svg", text: "Профиль", subtitle: "История записей" },
           ].map((item) => (
             <Link key={item.to} to={item.to} className="block">
               <Cell
