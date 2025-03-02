@@ -1,6 +1,4 @@
 @import "tailwindcss";
-
-/* Светлая тема (по умолчанию) */
 :root {
   --tg-theme-bg-color: #ffffff;
   --tg-theme-secondary-bg-color: #f5f5f5;
@@ -10,18 +8,6 @@
   --tg-theme-font-family: system-ui, sans-serif;
   --tg-theme-border-radius: 0.375rem;
 }
-
-/* Тёмная тема */
-.dark {
-  --tg-theme-bg-color: #000000;
-  --tg-theme-secondary-bg-color: #121212;
-  --tg-theme-text-color: #ffffff;
-  --tg-theme-hint-color: #444444;
-  --tg-theme-link-color: #8ab4f8;
-  --tg-theme-font-family: system-ui, sans-serif;
-  --tg-theme-border-radius: 0.375rem;
-}
-
 
 body {
   background: var(--tg-theme-secondary-bg-color, white);

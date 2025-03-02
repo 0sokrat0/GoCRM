@@ -1,53 +1,89 @@
 import { FC, useEffect, useState } from "react";
 
-export const DynamicGradientBackground: FC = () => {
-  const gradients = [
-    "bg-gradient-to-r from-indigo-400 to-cyan-400",
-    "bg-gradient-to-r from-emerald-400 to-cyan-400",
-    "bg-gradient-to-r from-slate-900 to-slate-700",
-    "bg-gradient-to-r from-violet-500 to-purple-500",
-    "bg-gradient-to-r from-amber-500 to-pink-500",
-  ];
+interface Color {
+  h: number;
+  s: number;
+  l: number;
+}
 
-  const [currentGradient, setCurrentGradient] = useState(gradients[0]);
-  const [nextGradient, setNextGradient] = useState<string | null>(null);
-  const [fade, setFade] = useState(false);
+const lerp = (a: number, b: number, t: number) => a * (1 - t) + b * t;
+const clamp = (num: number, min: number, max: number) =>
+  Math.min(Math.max(num, min), max);
+
+const interpolateColor = (current: Color, target: Color, t: number): Color => ({
+  h: lerp(current.h, target.h, t),
+  s: clamp(lerp(current.s, target.s, t), 30, 100),
+  l: clamp(lerp(current.l, target.l, t), 20, 80),
+});
+
+const generateColor = (base?: Color): Color => {
+  if (!base) {
+    return {
+      h: Math.floor(Math.random() * 360),
+      s: 50 + Math.random() * 50,
+      l: 40 + Math.random() * 20,
+    };
+  }
+  
+  return {
+    h: (base.h + 30 + Math.random() * 60) % 360,
+    s: clamp(base.s + (Math.random() * 20 - 10), 40, 100),
+    l: clamp(base.l + (Math.random() * 10 - 5), 30, 70),
+  };
+};
+
+const generateGradient = (current?: { start: Color; mid: Color; end: Color }) => ({
+  start: generateColor(current?.start),
+  mid: generateColor(current?.mid),
+  end: generateColor(current?.end),
+});
+
+export const DynamicGradientBackground: FC = () => {
+  const [currentGradient, setCurrentGradient] = useState(() => generateGradient());
+  const [targetGradient, setTargetGradient] = useState(() => generateGradient(currentGradient));
 
   useEffect(() => {
-    const changeGradient = () => {
-      let newGradient = gradients[Math.floor(Math.random() * gradients.length)];
-      // Гарантируем, что новый градиент отличается от текущего
-      while (newGradient === currentGradient) {
-        newGradient = gradients[Math.floor(Math.random() * gradients.length)];
+    let animationFrameId: number;
+    const duration = 10000;
+    let startTime = Date.now();
+
+    const animate = () => {
+      const now = Date.now();
+      const progress = (now - startTime) / duration;
+
+      if (progress < 1) {
+        setCurrentGradient((prev) => ({
+          start: interpolateColor(prev.start, targetGradient.start, progress),
+          mid: interpolateColor(prev.mid, targetGradient.mid, progress),
+          end: interpolateColor(prev.end, targetGradient.end, progress),
+        }));
+        animationFrameId = requestAnimationFrame(animate);
+      } else {
+        const newTarget = generateGradient(targetGradient);
+        setCurrentGradient(targetGradient);
+        setTargetGradient(newTarget);
+        startTime = Date.now();
+        animationFrameId = requestAnimationFrame(animate);
       }
-      setNextGradient(newGradient);
-      setFade(true);
-      // Через 1 секунду завершаем переход, устанавливая новый градиент как текущий
-      setTimeout(() => {
-        setCurrentGradient(newGradient);
-        setFade(false);
-        setNextGradient(null);
-      }, 1000);
     };
 
-    const interval = setInterval(changeGradient, 100000);
-    return () => clearInterval(interval);
-  }, [currentGradient, gradients]);
+    animationFrameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [targetGradient]);
+
+  const gradientStyle = {
+    background: `linear-gradient(to right,
+      hsl(${currentGradient.start.h}, ${currentGradient.start.s}%, ${currentGradient.start.l}%),
+      hsl(${currentGradient.mid.h}, ${currentGradient.mid.s}%, ${currentGradient.mid.l}%),
+      hsl(${currentGradient.end.h}, ${currentGradient.end.s}%, ${currentGradient.end.l}%))`,
+  };
 
   return (
     <div className="absolute top-0 left-0 -z-10 w-screen h-screen opacity-30">
-      {/* Текущий градиент */}
       <div
-        className={`absolute top-0 left-0 w-full h-full transition-opacity duration-1000 ${currentGradient} sm:blur-3xl blur-xl`}
+        className="absolute top-0 left-0 w-full h-full sm:blur-3xl blur-xl transition-all duration-10000 ease-in-out"
+        style={gradientStyle}
       />
-      {/* Следующий градиент, который появляется при смене */}
-      {nextGradient && (
-        <div
-          className={`absolute top-0 left-0 w-full h-full transition-opacity duration-1000 ${nextGradient} sm:blur-3xl blur-xl ${
-            fade ? "opacity-100" : "opacity-0"
-          }`}
-        />
-      )}
     </div>
   );
 };

@@ -31,11 +31,10 @@ export const Link: FC<LinkProps> = ({
     }
   }, [to, propsOnClick]);
 
-  // Здесь можно добавить нужные классы для прозрачности и других эффектов.
-  // Например, text-white с уменьшенной непрозрачностью:
+ 
   const linkClasses = classNames(
     className,
-    'text-white text-opacity-75 hover:text-opacity-100 transition-colors duration-200'
+    'bg-transparent text-white text-opacity-75 hover:text-opacity-100 transition-colors duration-200'
   );
 
   return (
