@@ -1,0 +1,16 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API для системы управления клиентами
+  title: GoCRM API
+  version: "1.0"
+paths: {}
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

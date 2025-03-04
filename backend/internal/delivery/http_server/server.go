@@ -3,11 +3,10 @@ package httpserver
 import (
 	"GoCRM/internal/config"
 	"GoCRM/internal/delivery/http_server/handlers"
-	"GoCRM/persistence/db"
-	"GoCRM/persistence/repositories"
-	"GoCRM/pkg/logger"
-
+	"GoCRM/internal/infrastructure/repositories"
 	"GoCRM/internal/usecase"
+	"GoCRM/pkg/db"
+	"GoCRM/pkg/logger"
 	"fmt"
 	"net/http"
 	"time"

@@ -1,11 +1,14 @@
 package httpserver
 
 import (
+	docs "GoCRM/docs"
 	"GoCRM/internal/delivery/http_server/middleware"
 	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Response struct {
@@ -26,6 +29,8 @@ func (s *Server) RegisterRoutes() *gin.Engine {
 
 	r.GET("/", s.HelloWorldHandler)
 	r.GET("/health", s.healthHandler)
+	docs.SwaggerInfo.BasePath = "/api/v1"
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api/v1")
 	{

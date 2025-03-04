@@ -41,6 +41,14 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	done <- true
 }
 
+// @title GoCRM API
+// @version 1.0
+// @description REST API для системы управления клиентами
+// @host localhost:8080
+// @BasePath /api/v1
+// @schemes http
+// @in header
+// @name Authorization
 func main() {
 
 	cfg := config.GetConfig()

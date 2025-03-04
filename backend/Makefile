@@ -1,13 +1,13 @@
 # Simple Makefile for a Go project
 
 # Build the application
-all: build test
+all: build test 
 
 build:
 	@echo "Building..."
 	
 	
-	@go build -o main cmd/api/main.go
+	@go build -o bin/backend cmd/api/main.go 
 
 
 run:
@@ -44,7 +44,7 @@ itest:
 # Clean the binary
 clean:
 	@echo "Cleaning..."
-	@rm -f main
+	@rm -f ./bin/backend
 
 # Live Reload
 watch:

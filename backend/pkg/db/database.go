@@ -1,19 +1,18 @@
 package db
 
 import (
+	"GoCRM/internal/config"
+	"GoCRM/migrations/models"
+
+	zlogger "GoCRM/pkg/logger"
 	"fmt"
 	"log"
 	"time"
-
-	"GoCRM/internal/config"
-	"GoCRM/persistence/models"
 
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-
-	zlogger "GoCRM/pkg/logger"
 )
 
 type Database interface {
